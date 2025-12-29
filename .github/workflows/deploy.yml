@@ -78,7 +78,8 @@ jobs:
 
             if [ ! -f "$SERVICE_FILE" ]; then
               echo "Creating systemd service for AWSTemplate API..."
-              sudo tee $SERVICE_FILE > /dev/null << 'EOL'
+
+              sudo tee $SERVICE_FILE > /dev/null <<'SERVICE_EOF'
 [Unit]
 Description=AWSTemplate API
 After=network.target
@@ -95,7 +96,8 @@ Environment=ASPNETCORE_ENVIRONMENT=Production
 
 [Install]
 WantedBy=multi-user.target
-EOL
+SERVICE_EOF
+
               sudo systemctl daemon-reload
               sudo systemctl enable awstemplate-api
             fi
