@@ -54,13 +54,26 @@ jobs:
           set -euo pipefail
 
           echo "Validating secrets..."
-          required_secrets=(EC2_HOST EC2_USER EC2_SSH_KEY POSTGRES_CONNECTION REDIS_CONNECTION)
-          for s in "${required_secrets[@]}"; do
-            if [ -z "${{ secrets[$s] }}" ]; then
-              echo "Error: Secret $s is missing"
-              exit 1
-            fi
-          done
+          if [ -z "${{ secrets.EC2_HOST }}" ]; then
+            echo "Error: EC2_HOST secret is missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.EC2_USER }}" ]; then
+            echo "Error: EC2_USER secret is missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
+            echo "Error: EC2_SSH_KEY secret is missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.POSTGRES_CONNECTION }}" ]; then
+            echo "Error: POSTGRES_CONNECTION secret is missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.REDIS_CONNECTION }}" ]; then
+            echo "Error: REDIS_CONNECTION secret is missing"
+            exit 1
+          fi
 
           echo "Creating ~/.ssh folder..."
           mkdir -p ~/.ssh
