@@ -1,100 +1,26 @@
-name: Deploy API to EC2 (ALB)
+- name: Setup SSH
+  shell: bash
+  run: |
+    set -e
 
-on:
-  push:
-    branches:
-      - main
+    # Check secrets
+    if [ -z "${{ secrets.EC2_HOST }}" ]; then
+      echo "EC2_HOST secret is missing"
+      exit 1
+    fi
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
+      echo "EC2_SSH_KEY secret is missing"
+      exit 1
+    fi
 
-    steps:
-    # ---------------------------
-    # Checkout source code
-    # ---------------------------
-    - name: Checkout code
-      uses: actions/checkout@v4
+    # Create SSH directory
+    mkdir -p ~/.ssh
+    chmod 700 ~/.ssh
 
-    # ---------------------------
-    # Setup .NET SDK
-    # ---------------------------
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
+    # Write multi-line key safely
+    echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+    chmod 600 ~/.ssh/id_rsa
 
-    # ---------------------------
-    # Restore dependencies
-    # ---------------------------
-    - name: Restore
-      run: dotnet restore
-
-    # ---------------------------
-    # Build application
-    # ---------------------------
-    - name: Build
-      run: dotnet build -c Release --no-restore
-
-    # ---------------------------
-    # Publish application
-    # ---------------------------
-    - name: Publish
-      run: |
-        dotnet publish AWSTemplate.Api \
-          -c Release \
-          -o publish
-
-    # ---------------------------
-    # Setup SSH (safe + validated)
-    # ---------------------------
-    - name: Setup SSH
-      shell: bash
-      run: |
-        set -e
-
-        if [ -z "${{ secrets.EC2_HOST }}" ]; then
-          echo "EC2_HOST secret is missing"
-          exit 1
-        fi
-
-        if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
-          echo "EC2_SSH_KEY secret is missing"
-          exit 1
-        fi
-
-        mkdir -p ~/.ssh
-        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-
-        ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
-
-    # ---------------------------
-    # Copy published files to EC2
-    # ---------------------------
-    - name: Copy files to EC2
-      run: |
-        rsync -avz --delete publish/ \
-          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/awstemplate/
-
-    # ---------------------------
-    # Run migrations and restart service
-    # ---------------------------
-    - name: Run migrations and restart API
-      shell: bash
-      run: |
-        ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e
-
-          export POSTGRES_CONNECTION="${{ secrets.POSTGRES_CONNECTION }}"
-          export REDIS_CONNECTION="${{ secrets.REDIS_CONNECTION }}"
-          export ASPNETCORE_ENVIRONMENT=Production
-
-          cd /var/www/awstemplate
-
-          dotnet ef database update \
-            --project AWSTemplate.Infrastructure \
-            --startup-project AWSTemplate.Api
-
-          sudo systemctl restart awstemplate-api
-        EOF
+    # Add host to known_hosts
+    ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
