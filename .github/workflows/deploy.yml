@@ -78,7 +78,7 @@ jobs:
 
             if [ ! -f "$SERVICE_FILE" ]; then
               echo "Creating systemd service for AWSTemplate API..."
-              sudo bash -c "cat > $SERVICE_FILE" << EOL
+              sudo tee $SERVICE_FILE > /dev/null << 'EOL'
 [Unit]
 Description=AWSTemplate API
 After=network.target
