@@ -1,0 +1,15 @@
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/bin/Debug/net9.0/AWSTemplate.Application.deps.json
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/bin/Debug/net9.0/AWSTemplate.Application.dll
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/bin/Debug/net9.0/AWSTemplate.Application.pdb
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/bin/Debug/net9.0/AWSTemplate.Domain.dll
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/bin/Debug/net9.0/AWSTemplate.Domain.pdb
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/obj/Debug/net9.0/AWSTemplate.Application.csproj.AssemblyReference.cache
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/obj/Debug/net9.0/AWSTemplate.Application.GeneratedMSBuildEditorConfig.editorconfig
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/obj/Debug/net9.0/AWSTemplate.Application.AssemblyInfoInputs.cache
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/obj/Debug/net9.0/AWSTemplate.Application.AssemblyInfo.cs
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/obj/Debug/net9.0/AWSTemplate.Application.csproj.CoreCompileInputs.cache
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/obj/Debug/net9.0/AWSTempl.7897FDDB.Up2Date
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/obj/Debug/net9.0/AWSTemplate.Application.dll
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/obj/Debug/net9.0/refint/AWSTemplate.Application.dll
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/obj/Debug/net9.0/AWSTemplate.Application.pdb
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Application/obj/Debug/net9.0/ref/AWSTemplate.Application.dll

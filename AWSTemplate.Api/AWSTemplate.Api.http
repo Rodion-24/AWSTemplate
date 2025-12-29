@@ -1,0 +1,6 @@
+@AWSTemplate.Api_HostAddress = http://localhost:5110
+
+GET {{AWSTemplate.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

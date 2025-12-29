@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>4093a497-7501-47ba-ab44-b33d56fedfd7</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.Core" Version="4.0.3.6" />
+    <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.4.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AWSTemplate.Application\AWSTemplate.Application.csproj" />
+    <ProjectReference Include="..\AWSTemplate.Infrastructure\AWSTemplate.Infrastructure.csproj" />
+    <ProjectReference Include="..\AWSTemplate.Domain\AWSTemplate.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

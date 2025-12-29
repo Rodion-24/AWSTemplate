@@ -1,0 +1,11 @@
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Domain/bin/Debug/net9.0/AWSTemplate.Domain.deps.json
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Domain/bin/Debug/net9.0/AWSTemplate.Domain.dll
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Domain/bin/Debug/net9.0/AWSTemplate.Domain.pdb
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Domain/obj/Debug/net9.0/AWSTemplate.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Domain/obj/Debug/net9.0/AWSTemplate.Domain.AssemblyInfoInputs.cache
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Domain/obj/Debug/net9.0/AWSTemplate.Domain.AssemblyInfo.cs
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Domain/obj/Debug/net9.0/AWSTemplate.Domain.csproj.CoreCompileInputs.cache
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Domain/obj/Debug/net9.0/AWSTemplate.Domain.dll
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Domain/obj/Debug/net9.0/refint/AWSTemplate.Domain.dll
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Domain/obj/Debug/net9.0/AWSTemplate.Domain.pdb
+/Users/rodion/Desktop/Projects/AWSTemplate/AWSTemplate.Domain/obj/Debug/net9.0/ref/AWSTemplate.Domain.dll

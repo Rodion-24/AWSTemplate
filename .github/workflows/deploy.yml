@@ -1,0 +1,61 @@
+name: Deploy API to EC2 (ALB)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build -c Release --no-restore
+
+    - name: Publish
+      run: |
+        dotnet publish AWSTemplate.Api \
+          -c Release \
+          -o publish
+
+    # ---- SSH key ----
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+    # ---- Copy files ----
+    - name: Copy files to EC2
+      run: |
+        rsync -avz publish/ \
+          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/awstemplate/
+
+    # ---- Migrate + Restart ----
+    - name: Run migrations and restart API
+      run: |
+        ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          export POSTGRES_CONNECTION="${{ secrets.POSTGRES_CONNECTION }}"
+          export REDIS_CONNECTION="${{ secrets.REDIS_CONNECTION }}"
+
+          cd /var/www/awstemplate
+
+          dotnet ef database update \
+            --project AWSTemplate.Infrastructure \
+            --startup-project AWSTemplate.Api
+
+          sudo systemctl restart awstemplate-api
+        EOF
