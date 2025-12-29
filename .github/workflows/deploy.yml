@@ -66,6 +66,42 @@ jobs:
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/awstemplate/
 
       # ---------------------------
+      # Setup systemd service if not exists
+      # ---------------------------
+      - name: Ensure systemd service
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -euo pipefail
+
+            SERVICE_FILE=/etc/systemd/system/awstemplate-api.service
+
+            if [ ! -f "$SERVICE_FILE" ]; then
+              echo "Creating systemd service for AWSTemplate API..."
+              sudo bash -c "cat > $SERVICE_FILE" << EOL
+[Unit]
+Description=AWSTemplate API
+After=network.target
+
+[Service]
+WorkingDirectory=/home/ec2-user/awstemplate
+ExecStart=/usr/bin/dotnet /home/ec2-user/awstemplate/AWSTemplate.Api.dll
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=awstemplate-api
+User=ec2-user
+Environment=ASPNETCORE_ENVIRONMENT=Production
+
+[Install]
+WantedBy=multi-user.target
+EOL
+              sudo systemctl daemon-reload
+              sudo systemctl enable awstemplate-api
+            fi
+          EOF
+
+      # ---------------------------
       # Restart API service
       # ---------------------------
       - name: Restart API service
@@ -73,6 +109,5 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -euo pipefail
-            # Перезапуск systemd сервиса, если он есть
-            sudo systemctl restart awstemplate-api || true
+            sudo systemctl restart awstemplate-api
           EOF
