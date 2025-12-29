@@ -37,6 +37,15 @@ jobs:
         run: dotnet build -c Release --no-restore
 
       # ---------------------------
+      # Apply EF Core migrations (on CI)
+      # ---------------------------
+      - name: Apply EF Core migrations
+        run: |
+          dotnet ef database update \
+            --project AWSTemplate.Infrastructure \
+            --startup-project AWSTemplate.Api
+
+      # ---------------------------
       # Publish application
       # ---------------------------
       - name: Publish
@@ -66,14 +75,6 @@ jobs:
             echo "Error: EC2_SSH_KEY secret is missing"
             exit 1
           fi
-          if [ -z "${{ secrets.POSTGRES_CONNECTION }}" ]; then
-            echo "Error: POSTGRES_CONNECTION secret is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.REDIS_CONNECTION }}" ]; then
-            echo "Error: REDIS_CONNECTION secret is missing"
-            exit 1
-          fi
 
           echo "Creating ~/.ssh folder..."
           mkdir -p ~/.ssh
@@ -87,35 +88,32 @@ jobs:
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts || true
 
       # ---------------------------
+      # Ensure remote directory exists
+      # ---------------------------
+      - name: Ensure remote directory exists
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -euo pipefail
+            mkdir -p ~/awstemplate
+          EOF
+
+      # ---------------------------
       # Copy published files to EC2
       # ---------------------------
       - name: Copy files to EC2
         run: |
           rsync -avz --delete -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" publish/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/awstemplate/
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/awstemplate/
 
       # ---------------------------
-      # Run migrations and restart API
+      # Restart API service
       # ---------------------------
-      - name: Run migrations and restart API
+      - name: Restart API service
         shell: bash
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -euo pipefail
-
-            echo "Setting environment variables..."
-            export POSTGRES_CONNECTION="${{ secrets.POSTGRES_CONNECTION }}"
-            export REDIS_CONNECTION="${{ secrets.REDIS_CONNECTION }}"
-            export ASPNETCORE_ENVIRONMENT=Production
-
-            echo "Navigating to deployed folder..."
-            cd /var/www/awstemplate
-
-            echo "Applying EF Core migrations..."
-            dotnet ef database update \
-              --project AWSTemplate.Infrastructure \
-              --startup-project AWSTemplate.Api
-
-            echo "Restarting systemd service..."
-            sudo systemctl restart awstemplate-api
+            # Перезапуск systemd сервиса (если настроен)
+            sudo systemctl restart awstemplate-api || true
           EOF
