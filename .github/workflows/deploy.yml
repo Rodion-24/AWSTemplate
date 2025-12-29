@@ -10,100 +10,99 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # ---------------------------
-    # Checkout source code
-    # ---------------------------
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # ---------------------------
+      # Checkout source code
+      # ---------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # ---------------------------
-    # Setup .NET SDK
-    # ---------------------------
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
+      # ---------------------------
+      # Setup .NET SDK
+      # ---------------------------
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
 
-    # ---------------------------
-    # Restore dependencies
-    # ---------------------------
-    - name: Restore
-      run: dotnet restore
+      # ---------------------------
+      # Restore dependencies
+      # ---------------------------
+      - name: Restore
+        run: dotnet restore
 
-    # ---------------------------
-    # Build application
-    # ---------------------------
-    - name: Build
-      run: dotnet build -c Release --no-restore
+      # ---------------------------
+      # Build application
+      # ---------------------------
+      - name: Build
+        run: dotnet build -c Release --no-restore
 
-    # ---------------------------
-    # Publish application
-    # ---------------------------
-    - name: Publish
-      run: |
-        dotnet publish AWSTemplate.Api \
-          -c Release \
-          -o publish
+      # ---------------------------
+      # Publish application
+      # ---------------------------
+      - name: Publish
+        run: |
+          dotnet publish AWSTemplate.Api \
+            -c Release \
+            -o publish
 
-    # ---------------------------
-    # Setup SSH (safe + multi-line key handling)
-    # ---------------------------
-    - name: Setup SSH
-      shell: bash
-      run: |
-        set -e
+      # ---------------------------
+      # Setup SSH (safe + multi-line key handling)
+      # ---------------------------
+      - name: Setup SSH
+        shell: bash
+        run: |
+          set -euo pipefail
 
-        # Validate required secrets
-        if [ -z "${{ secrets.EC2_HOST }}" ]; then
-          echo "EC2_HOST secret is missing"
-          exit 1
-        fi
-        if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
-          echo "EC2_SSH_KEY secret is missing"
-          exit 1
-        fi
+          echo "Validating secrets..."
+          required_secrets=(EC2_HOST EC2_USER EC2_SSH_KEY POSTGRES_CONNECTION REDIS_CONNECTION)
+          for s in "${required_secrets[@]}"; do
+            if [ -z "${{ secrets[$s] }}" ]; then
+              echo "Error: Secret $s is missing"
+              exit 1
+            fi
+          done
 
-        # Create SSH folder
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
+          echo "Creating ~/.ssh folder..."
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
 
-        # Write multi-line private key safely
-        echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
+          echo "Writing SSH private key..."
+          printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-        # Add EC2 host to known_hosts
-        ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          echo "Adding EC2 host to known_hosts..."
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts || true
 
-    # ---------------------------
-    # Copy published files to EC2
-    # ---------------------------
-    - name: Copy files to EC2
-      run: |
-        rsync -avz --delete -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" publish/ \
-          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/awstemplate/
+      # ---------------------------
+      # Copy published files to EC2
+      # ---------------------------
+      - name: Copy files to EC2
+        run: |
+          rsync -avz --delete -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" publish/ \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/awstemplate/
 
-    # ---------------------------
-    # Run migrations and restart API
-    # ---------------------------
-    - name: Run migrations and restart API
-      shell: bash
-      run: |
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e
+      # ---------------------------
+      # Run migrations and restart API
+      # ---------------------------
+      - name: Run migrations and restart API
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -euo pipefail
 
-          # Set environment variables for DB and Redis
-          export POSTGRES_CONNECTION="${{ secrets.POSTGRES_CONNECTION }}"
-          export REDIS_CONNECTION="${{ secrets.REDIS_CONNECTION }}"
-          export ASPNETCORE_ENVIRONMENT=Production
+            echo "Setting environment variables..."
+            export POSTGRES_CONNECTION="${{ secrets.POSTGRES_CONNECTION }}"
+            export REDIS_CONNECTION="${{ secrets.REDIS_CONNECTION }}"
+            export ASPNETCORE_ENVIRONMENT=Production
 
-          # Navigate to deployed folder
-          cd /var/www/awstemplate
+            echo "Navigating to deployed folder..."
+            cd /var/www/awstemplate
 
-          # Apply EF Core migrations
-          dotnet ef database update \
-            --project AWSTemplate.Infrastructure \
-            --startup-project AWSTemplate.Api
+            echo "Applying EF Core migrations..."
+            dotnet ef database update \
+              --project AWSTemplate.Infrastructure \
+              --startup-project AWSTemplate.Api
 
-          # Restart systemd service
-          sudo systemctl restart awstemplate-api
-        EOF
+            echo "Restarting systemd service..."
+            sudo systemctl restart awstemplate-api
+          EOF
