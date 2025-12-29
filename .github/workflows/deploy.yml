@@ -1,4 +1,4 @@
-name: Deploy API to EC2 (ALB)
+name: Deploy API to EC2
 
 on:
   push:
@@ -25,38 +25,13 @@ jobs:
           dotnet-version: '9.0.x'
 
       # ---------------------------
-      # Restore dependencies
+      # Build and publish application
       # ---------------------------
-      - name: Restore
-        run: dotnet restore
-
-      # ---------------------------
-      # Build application
-      # ---------------------------
-      - name: Build
-        run: dotnet build -c Release --no-restore
-
-      # ---------------------------
-      # Install dotnet-ef and apply migrations to RDS
-      # ---------------------------
-      - name: Apply EF Core migrations
+      - name: Build & Publish
         run: |
-          dotnet tool install --global dotnet-ef --version 9.0.0
-          export PATH="$PATH:$HOME/.dotnet/tools"
-          dotnet ef --version
-          dotnet ef database update \
-            --project AWSTemplate.Infrastructure \
-            --startup-project AWSTemplate.Api \
-            --connection "${{ secrets.POSTGRES_CONNECTION }}"
-
-      # ---------------------------
-      # Publish application
-      # ---------------------------
-      - name: Publish
-        run: |
-          dotnet publish AWSTemplate.Api \
-            -c Release \
-            -o publish
+          dotnet restore
+          dotnet build -c Release --no-restore
+          dotnet publish AWSTemplate.Api -c Release -o publish
 
       # ---------------------------
       # Setup SSH
@@ -98,5 +73,6 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -euo pipefail
+            # Перезапуск systemd сервиса, если он есть
             sudo systemctl restart awstemplate-api || true
           EOF
