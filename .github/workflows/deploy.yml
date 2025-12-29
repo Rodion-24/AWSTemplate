@@ -37,13 +37,17 @@ jobs:
         run: dotnet build -c Release --no-restore
 
       # ---------------------------
-      # Apply EF Core migrations (on CI)
+      # Install dotnet-ef and apply migrations to RDS
       # ---------------------------
       - name: Apply EF Core migrations
         run: |
+          dotnet tool install --global dotnet-ef --version 9.0.0
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          dotnet ef --version
           dotnet ef database update \
             --project AWSTemplate.Infrastructure \
-            --startup-project AWSTemplate.Api
+            --startup-project AWSTemplate.Api \
+            --connection "${{ secrets.POSTGRES_CONNECTION }}"
 
       # ---------------------------
       # Publish application
@@ -55,36 +59,16 @@ jobs:
             -o publish
 
       # ---------------------------
-      # Setup SSH (safe + multi-line key handling)
+      # Setup SSH
       # ---------------------------
       - name: Setup SSH
         shell: bash
         run: |
           set -euo pipefail
-
-          echo "Validating secrets..."
-          if [ -z "${{ secrets.EC2_HOST }}" ]; then
-            echo "Error: EC2_HOST secret is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.EC2_USER }}" ]; then
-            echo "Error: EC2_USER secret is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
-            echo "Error: EC2_SSH_KEY secret is missing"
-            exit 1
-          fi
-
-          echo "Creating ~/.ssh folder..."
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-
-          echo "Writing SSH private key..."
           printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
-          echo "Adding EC2 host to known_hosts..."
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts || true
 
       # ---------------------------
@@ -114,6 +98,5 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -euo pipefail
-            # Перезапуск systemd сервиса (если настроен)
             sudo systemctl restart awstemplate-api || true
           EOF
